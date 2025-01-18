@@ -79,6 +79,14 @@ impl Cpu {
         self.mem_write(addr, self.a);
     }
 
+    fn ldx(&mut self, mode: &AddressingMode) {
+        let addr = self.get_address(mode);
+        let value = self.mem_read(addr);
+
+        self.x = value;
+        self.update_zero_and_negative_flags(self.x);
+    }
+
     // Transfer
 
     fn tax(&mut self) {
@@ -174,6 +182,7 @@ impl Cpu {
                 0x85 | 0x95 | 0x8D | 0x9D | 0x99 | 0x81 | 0x91 => {
                     self.sta(&instruction.addressing_mode)
                 }
+                0xA2 | 0xA6 | 0xB6 | 0xAE | 0xBE => self.ldx(&instruction.addressing_mode),
 
                 // Transfer
                 0xAA => self.tax(),
@@ -252,44 +261,71 @@ mod tests {
     mod instructions {
         use super::*;
 
-        #[test]
-        fn test_0xa9_lda_immediate() {
-            let mut cpu = Cpu::new();
-            cpu.load_and_run(vec![0xA9, 0x05, 0x00]);
-            assert_eq!(cpu.a, 0x05);
-            assert_eq!(cpu.status & StatusFlags::Zero.bits(), 0b00);
-            assert_eq!(cpu.status & StatusFlags::Negative.bits(), 0b0);
+        mod access {
+            use super::*;
+
+            #[test]
+            fn test_0xa9_lda_immediate() {
+                let mut cpu = Cpu::new();
+                cpu.load_and_run(vec![0xA9, 0x05, 0x00]);
+                assert_eq!(cpu.a, 0x05);
+                assert_eq!(cpu.status & StatusFlags::Zero.bits(), 0b00);
+                assert_eq!(cpu.status & StatusFlags::Negative.bits(), 0b0);
+            }
+
+            #[test]
+            fn test_0xa9_lda_zero_flag() {
+                let mut cpu = Cpu::new();
+                cpu.load_and_run(vec![0xA9, 0x00, 0x00]);
+                assert_eq!(cpu.status & StatusFlags::Zero.bits(), 0b10)
+            }
+
+            #[test]
+            fn test_0xa5_lda_from_memory() {
+                let mut cpu = Cpu::new();
+                cpu.mem_write(0x10, 0x55);
+                cpu.load_and_run(vec![0xA5, 0x10, 0x00]);
+                assert_eq!(cpu.a, 0x55);
+            }
+
+            #[test]
+            fn test_0xa2_ldx_immediate() {
+                let mut cpu = Cpu::new();
+                cpu.load_and_run(vec![0xA2, 0x10, 0x00]);
+                assert_eq!(cpu.x, 0x10);
+            }
+
+            #[test]
+            fn test_0xa6_ldx_from_memory() {
+                let mut cpu = Cpu::new();
+                cpu.mem_write(0x11, 0xAB);
+                cpu.load_and_run(vec![0xA6, 0x11, 0x00]);
+                assert_eq!(cpu.x, 0xAB);
+            }
         }
 
-        #[test]
-        fn test_0xa9_lda_zero_flag() {
-            let mut cpu = Cpu::new();
-            cpu.load_and_run(vec![0xA9, 0x00, 0x00]);
-            assert_eq!(cpu.status & StatusFlags::Zero.bits(), 0b10)
+        mod transfer {
+            use super::*;
+
+            #[test]
+            fn test_0xaa_tax_move_a_to_x() {
+                let mut cpu = Cpu::new();
+                cpu.a = 10;
+                cpu.load_and_run(vec![0xA9, 0x0A, 0xAA, 0x00]);
+                assert_eq!(cpu.x, 0x0A);
+            }
         }
 
-        #[test]
-        fn test_0xa5_lda_from_memory() {
-            let mut cpu = Cpu::new();
-            cpu.mem_write(0x10, 0x55);
-            cpu.load_and_run(vec![0xA5, 0x10, 0x00]);
-            assert_eq!(cpu.a, 0x55);
-        }
+        mod arithmetic {
+            use super::*;
 
-        #[test]
-        fn test_0xaa_tax_move_a_to_x() {
-            let mut cpu = Cpu::new();
-            cpu.a = 10;
-            cpu.load_and_run(vec![0xA9, 0x0A, 0xAA, 0x00]);
-            assert_eq!(cpu.x, 0x0A);
-        }
+            #[test]
+            fn test_0xe8_inx_overflow() {
+                let mut cpu = Cpu::new();
+                cpu.load_and_run(vec![0xA9, 0xFF, 0xAA, 0xE8, 0xE8, 0x00]);
 
-        #[test]
-        fn test_0xe8_inx_overflow() {
-            let mut cpu = Cpu::new();
-            cpu.load_and_run(vec![0xA9, 0xFF, 0xAA, 0xE8, 0xE8, 0x00]);
-
-            assert_eq!(cpu.x, 1);
+                assert_eq!(cpu.x, 1);
+            }
         }
 
         #[test]
