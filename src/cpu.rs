@@ -92,6 +92,14 @@ impl Cpu {
         self.mem_write(addr, self.x);
     }
 
+    fn ldy(&mut self, mode: &AddressingMode) {
+        let addr = self.get_address(mode);
+        let value = self.mem_read(addr);
+
+        self.y = value;
+        self.update_zero_and_negative_flags(self.y);
+    }
+
     // Transfer
 
     fn tax(&mut self) {
@@ -188,6 +196,7 @@ impl Cpu {
                 }
                 0xA2 | 0xA6 | 0xB6 | 0xAE | 0xBE => self.ldx(&instruction.addressing_mode),
                 0x86 | 0x96 | 0x8E => self.stx(&instruction.addressing_mode),
+                0xA0 | 0xA4 | 0xB4 | 0xAC | 0xBC => self.ldy(&instruction.addressing_mode),
 
                 // Transfer
                 0xAA => self.tax(),
@@ -313,6 +322,21 @@ mod tests {
                 let mut cpu = Cpu::new();
                 cpu.load_and_run(vec![0xA2, 0xFF, 0x86, 0x10, 0x00]);
                 assert_eq!(cpu.memory[0x10], 0xFF);
+            }
+
+            #[test]
+            fn test_0xa0_ldy_immediate() {
+                let mut cpu = Cpu::new();
+                cpu.load_and_run(vec![0xA0, 0x13, 0x00]);
+                assert_eq!(cpu.y, 0x13);
+            }
+
+            #[test]
+            fn test_0xa4_ldy_from_memory() {
+                let mut cpu = Cpu::new();
+                cpu.mem_write(0x03, 0x1F);
+                cpu.load_and_run(vec![0xA4, 0x03, 0x00]);
+                assert_eq!(cpu.y, 0x1F);
             }
         }
 
