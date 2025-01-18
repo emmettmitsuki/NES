@@ -56,6 +56,10 @@ lazy_static! {
         Instruction::new(0xAE, "LDX", 3, 4, AddressingMode::Absolute),
         Instruction::new(0xBE, "LDX", 3, 4 /* 5 if page crossed */, AddressingMode::AbsoluteY),
 
+        Instruction::new(0x86, "STX", 2, 3, AddressingMode::ZeroPage),
+        Instruction::new(0x96, "STX", 2, 4, AddressingMode::ZeroPageY),
+        Instruction::new(0x8E, "STX", 3, 4, AddressingMode::Absolute),
+
         // Transfer
         Instruction::new(0xAA, "TAX", 1, 2, AddressingMode::Implicit),
 
