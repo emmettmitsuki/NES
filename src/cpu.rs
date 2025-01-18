@@ -166,8 +166,7 @@ impl Cpu {
         // TODO: change reset value
         self.status = 0;
 
-        // TODO: add this when stack is implemented
-        // self.stack -= 3;
+        // TODO: self.stack -= 3;
 
         self.pc = self.mem_read_u16(PROGRAM_COUNTER_RESET_ADDRESS);
     }
