@@ -100,6 +100,11 @@ impl Cpu {
         self.update_zero_and_negative_flags(self.y);
     }
 
+    fn sty(&mut self, mode: &AddressingMode) {
+        let addr = self.get_address(mode);
+        self.mem_write(addr, self.y);
+    }
+
     // Transfer
 
     fn tax(&mut self) {
@@ -197,6 +202,7 @@ impl Cpu {
                 0xA2 | 0xA6 | 0xB6 | 0xAE | 0xBE => self.ldx(&instruction.addressing_mode),
                 0x86 | 0x96 | 0x8E => self.stx(&instruction.addressing_mode),
                 0xA0 | 0xA4 | 0xB4 | 0xAC | 0xBC => self.ldy(&instruction.addressing_mode),
+                0x84 | 0x94 | 0x8C => self.sty(&instruction.addressing_mode),
 
                 // Transfer
                 0xAA => self.tax(),
@@ -321,7 +327,7 @@ mod tests {
             fn test_0x86_stx() {
                 let mut cpu = Cpu::new();
                 cpu.load_and_run(vec![0xA2, 0xFF, 0x86, 0x10, 0x00]);
-                assert_eq!(cpu.memory[0x10], 0xFF);
+                assert_eq!(cpu.mem_read(0x10), 0xFF);
             }
 
             #[test]
@@ -337,6 +343,13 @@ mod tests {
                 cpu.mem_write(0x03, 0x1F);
                 cpu.load_and_run(vec![0xA4, 0x03, 0x00]);
                 assert_eq!(cpu.y, 0x1F);
+            }
+
+            #[test]
+            fn test_0x84_sty() {
+                let mut cpu = Cpu::new();
+                cpu.load_and_run(vec![0xA0, 0x44, 0x84, 0x01, 0x00]);
+                assert_eq!(cpu.mem_read(0x01), 0x44);
             }
         }
 
