@@ -112,6 +112,23 @@ impl Cpu {
         self.update_zero_and_negative_flags(self.x);
     }
 
+    fn txa(&mut self) {
+        self.a = self.x;
+        self.update_zero_and_negative_flags(self.a);
+    }
+
+    fn tay(&mut self) {
+        self.y = self.a;
+        self.update_zero_and_negative_flags(self.y);
+    }
+
+    fn tya(&mut self) {
+        self.a = self.y;
+        self.update_zero_and_negative_flags(self.a);
+    }
+
+    // Arithmetic
+
     fn inx(&mut self) {
         self.x = self.x.wrapping_add(1);
         self.update_zero_and_negative_flags(self.x);
@@ -206,6 +223,9 @@ impl Cpu {
 
                 // Transfer
                 0xAA => self.tax(),
+                0x8A => self.txa(),
+                0xA8 => self.tay(),
+                0x98 => self.tya(),
 
                 // Arithmetic
                 0xE8 => self.inx(),
@@ -357,11 +377,31 @@ mod tests {
             use super::*;
 
             #[test]
-            fn test_0xaa_tax_move_a_to_x() {
+            fn test_0xaa_tax() {
                 let mut cpu = Cpu::new();
-                cpu.a = 10;
                 cpu.load_and_run(vec![0xA9, 0x0A, 0xAA, 0x00]);
                 assert_eq!(cpu.x, 0x0A);
+            }
+
+            #[test]
+            fn test_0x8a_txa() {
+                let mut cpu = Cpu::new();
+                cpu.load_and_run(vec![0xA2, 0x12, 0x8A, 0x00]);
+                assert_eq!(cpu.a, 0x12);
+            }
+
+            #[test]
+            fn test_0xa8_tay() {
+                let mut cpu = Cpu::new();
+                cpu.load_and_run(vec![0xA9, 0x01, 0xA8, 0x00]);
+                assert_eq!(cpu.y, 0x01);
+            }
+
+            #[test]
+            fn test_0x98_tya() {
+                let mut cpu = Cpu::new();
+                cpu.load_and_run(vec![0xA0, 0xAD, 0x98, 0x00]);
+                assert_eq!(cpu.a, 0xAD);
             }
         }
 

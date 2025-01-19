@@ -73,6 +73,12 @@ lazy_static! {
         // Transfer
         Instruction::new(0xAA, "TAX", 1, 2, AddressingMode::Implicit),
 
+        Instruction::new(0x8A, "TXA", 1, 2, AddressingMode::Implicit),
+
+        Instruction::new(0xA8, "TAY", 1, 2, AddressingMode::Implicit),
+
+        Instruction::new(0x98, "TYA", 1, 2, AddressingMode::Implicit),
+
         // Arithmetic
         Instruction::new(0xE8, "INX", 1, 2, AddressingMode::Implicit),
 
