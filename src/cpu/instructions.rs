@@ -129,6 +129,12 @@ lazy_static! {
         Instruction::new(0x4E, "LSR", 3, 6, AddressingMode::Absolute),
         Instruction::new(0x5E, "LSR", 3, 7, AddressingMode::AbsoluteX),
 
+        Instruction::new(0x2A, "ROL", 1, 2, AddressingMode::Accumulator),
+        Instruction::new(0x26, "ROL", 2, 5, AddressingMode::ZeroPage),
+        Instruction::new(0x36, "ROL", 2, 6, AddressingMode::ZeroPageX),
+        Instruction::new(0x2E, "ROL", 3, 6, AddressingMode::Absolute),
+        Instruction::new(0x3E, "ROL", 3, 7, AddressingMode::AbsoluteX),
+
         // Jump
         Instruction::new(0x00, "BRK", 1, 7, AddressingMode::Implicit),
         // Instruction::new(0x00, "BRK", 2, 7, AddressingMode::Immediate),

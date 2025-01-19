@@ -130,6 +130,7 @@ impl Cpu {
                 // Shift
                 0x0A | 0x06 | 0x16 | 0x0E | 0x1E => self.asl(&instruction.addressing_mode),
                 0x4A | 0x46 | 0x56 | 0x4E | 0x5E => self.lsr(&instruction.addressing_mode),
+                0x2A | 0x26 | 0x36 | 0x2E | 0x3E => self.rol(&instruction.addressing_mode),
 
                 // Jump
                 0x00 => return,
@@ -293,6 +294,28 @@ impl Cpu {
 
             let carry_flag_value = value & 0x01;
             let result = value >> 1;
+            self.mem_write(addr, result);
+
+            self.update_carry_flag(carry_flag_value);
+            self.update_zero_and_negative_flags(result);
+        }
+    }
+
+    fn rol(&mut self, mode: &AddressingMode) {
+        if mode == &AddressingMode::Accumulator {
+            let carry_flag_initial = self.get_carry_flag();
+            let carry_flag_value = (self.a & 0x80) >> 7;
+            self.a = (self.a << 1) | carry_flag_initial;
+
+            self.update_carry_flag(carry_flag_value);
+            self.update_zero_and_negative_flags(self.a);
+        } else {
+            let addr = self.get_address(mode);
+            let value = self.mem_read(addr);
+
+            let carry_flag_initial = self.get_carry_flag();
+            let carry_flag_value = (value & 0x80) >> 7;
+            let result = (value << 1) | carry_flag_initial;
             self.mem_write(addr, result);
 
             self.update_carry_flag(carry_flag_value);
@@ -692,6 +715,33 @@ mod tests {
                 cpu.load_and_run(vec![0x46, 0x10, 0x00]);
                 assert_eq!(cpu.mem_read(0x10), 0x01);
                 assert_eq!(cpu.get_carry_flag(), 0);
+            }
+
+            #[test]
+            fn test_0x2a_rol_accumulator() {
+                let mut cpu = Cpu::new();
+                cpu.load_and_run(vec![0xA9, 0xFF, 0x2A, 0x2A, 0x00]);
+                assert_eq!(cpu.a, 0xFD);
+                assert_eq!(cpu.get_carry_flag(), 1);
+            }
+
+            #[test]
+            fn test_0x2a_rol_rotate_to_original_state() {
+                let mut cpu = Cpu::new();
+                cpu.load_and_run(vec![
+                    0xA9, 0x13, 0x2A, 0x2A, 0x2A, 0x2A, 0x2A, 0x2A, 0x2A, 0x2A, 0x2A, 0x00,
+                ]);
+                assert_eq!(cpu.a, 0x13);
+                assert_eq!(cpu.get_carry_flag(), 0);
+            }
+
+            #[test]
+            fn test_0x26_rol_from_memory() {
+                let mut cpu = Cpu::new();
+                cpu.mem_write(0x10, 0x81);
+                cpu.load_and_run(vec![0x26, 0x10, 0x00]);
+                assert_eq!(cpu.mem_read(0x10), 0x02);
+                assert_eq!(cpu.get_carry_flag(), 1);
             }
         }
 
