@@ -129,10 +129,32 @@ impl Cpu {
 
     // Arithmetic
 
+    fn adc(&mut self, mode: &AddressingMode) {
+        let addr = self.get_address(mode);
+        let value = self.mem_read(addr);
+        let carry_flag = self.get_carry_flag();
+
+        let (result, overflow) = {
+            let (res, ovf1) = self.a.overflowing_add(value);
+            let (res, ovf2) = res.overflowing_add(carry_flag);
+            (res, ovf1 || ovf2)
+        };
+
+        let overflow_flag_value = (result ^ self.a) & (result ^ value) & 0x80;
+
+        self.a = result;
+
+        self.update_overflow_flag(overflow_flag_value);
+        self.update_carry_flag(overflow);
+        self.update_zero_and_negative_flags(self.a);
+    }
+
     fn inx(&mut self) {
         self.x = self.x.wrapping_add(1);
         self.update_zero_and_negative_flags(self.x);
     }
+
+    // Other
 
     fn update_zero_and_negative_flags(&mut self, result: u8) {
         self.update_zero_flag(result);
@@ -152,6 +174,32 @@ impl Cpu {
             self.status |= StatusFlags::Negative.bits();
         } else {
             self.status &= !StatusFlags::Negative.bits();
+        }
+    }
+
+    fn get_overflow_flag(&self) -> u8 {
+        (self.status & StatusFlags::Overflow.bits()) >> 6
+    }
+
+    fn get_carry_flag(&self) -> u8 {
+        self.status & StatusFlags::Carry.bits()
+    }
+
+    // sets overflow flag to 0 if value == 0, else 1
+    fn update_overflow_flag(&mut self, value: u8) {
+        if value != 0 {
+            self.status |= StatusFlags::Overflow.bits();
+        } else {
+            self.status &= !StatusFlags::Overflow.bits();
+        }
+    }
+
+    // sets carry flag if overflow occured
+    fn update_carry_flag(&mut self, overflow: bool) {
+        if overflow {
+            self.status |= StatusFlags::Carry.bits();
+        } else {
+            self.status &= !StatusFlags::Carry.bits();
         }
     }
 
@@ -228,6 +276,9 @@ impl Cpu {
                 0x98 => self.tya(),
 
                 // Arithmetic
+                0x69 | 0x65 | 0x75 | 0x6D | 0x7D | 0x79 | 0x61 | 0x71 => {
+                    self.adc(&instruction.addressing_mode);
+                }
                 0xE8 => self.inx(),
 
                 // Jump
@@ -407,6 +458,29 @@ mod tests {
 
         mod arithmetic {
             use super::*;
+
+            #[test]
+            fn test_0x69_adc() {
+                let mut cpu = Cpu::new();
+                cpu.load_and_run(vec![0xA9, 0xC0, 0xAA, 0xE8, 0x69, 0xC4, 0x00]);
+                assert_eq!(cpu.a, 0x84);
+            }
+
+            #[test]
+            fn test_0x69_adc_carry_flag() {
+                let mut cpu = Cpu::new();
+                cpu.load_and_run(vec![0xA9, 0xFF, 0x69, 0x01, 0x00]);
+                assert_eq!(cpu.a, 0x00);
+                assert_eq!(cpu.get_carry_flag(), 1);
+            }
+
+            #[test]
+            fn test_0x69_adc_overflow_flag() {
+                let mut cpu = Cpu::new();
+                cpu.load_and_run(vec![0xA9, 0x50, 0x69, 0x50, 0x00]);
+                assert_eq!(cpu.a, 0xA0);
+                assert_eq!(cpu.get_overflow_flag(), 1);
+            }
 
             #[test]
             fn test_0xe8_inx_overflow() {
