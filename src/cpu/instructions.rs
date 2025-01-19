@@ -80,6 +80,15 @@ lazy_static! {
         Instruction::new(0x98, "TYA", 1, 2, AddressingMode::Implicit),
 
         // Arithmetic
+        Instruction::new(0x69, "ADC", 2, 2, AddressingMode::Immediate),
+        Instruction::new(0x65, "ADC", 2, 3, AddressingMode::ZeroPage),
+        Instruction::new(0x75, "ADC", 2, 4, AddressingMode::ZeroPageX),
+        Instruction::new(0x6D, "ADC", 3, 4, AddressingMode::Absolute),
+        Instruction::new(0x7D, "ADC", 3, 4 /* 5 if page crossed */, AddressingMode::AbsoluteX),
+        Instruction::new(0x79, "ADC", 3, 4 /* 5 if page crossed */, AddressingMode::AbsoluteY),
+        Instruction::new(0x61, "ADC", 2, 6, AddressingMode::IndirectX),
+        Instruction::new(0x71, "ADC", 2, 5 /* 6 if page crossed */, AddressingMode::IndirectY),
+
         Instruction::new(0xE8, "INX", 1, 2, AddressingMode::Implicit),
 
         // Jump
