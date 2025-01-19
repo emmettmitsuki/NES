@@ -137,6 +137,9 @@ impl Cpu {
                 0x29 | 0x25 | 0x35 | 0x2D | 0x3D | 0x39 | 0x21 | 0x31 => {
                     self.and(&instruction.addressing_mode)
                 }
+                0x09 | 0x05 | 0x15 | 0x0D | 0x1D | 0x19 | 0x01 | 0x11 => {
+                    self.ora(&instruction.addressing_mode)
+                }
 
                 // Jump
                 0x00 => return,
@@ -358,6 +361,15 @@ impl Cpu {
         let value = self.mem_read(addr);
 
         self.a &= value;
+
+        self.update_zero_and_negative_flags(self.a);
+    }
+
+    fn ora(&mut self, mode: &AddressingMode) {
+        let addr = self.get_address(mode);
+        let value = self.mem_read(addr);
+
+        self.a |= value;
 
         self.update_zero_and_negative_flags(self.a);
     }
@@ -809,6 +821,13 @@ mod tests {
                 let mut cpu = Cpu::new();
                 cpu.load_and_run(vec![0xA9, 0x0F, 0x29, 0xAA, 0x00]);
                 assert_eq!(cpu.a, 0x0A);
+            }
+
+            #[test]
+            fn test_0x09_ora() {
+                let mut cpu = Cpu::new();
+                cpu.load_and_run(vec![0xA9, 0xAA, 0x09, 0x55, 0x00]);
+                assert_eq!(cpu.a, 0xFF);
             }
         }
 
