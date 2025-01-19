@@ -153,6 +153,16 @@ impl Cpu {
         todo!()
     }
 
+    fn inc(&mut self, mode: &AddressingMode) {
+        let addr = self.get_address(mode);
+        let value = self.mem_read(addr);
+
+        let result = value.wrapping_add(1);
+        self.mem_write(addr, result);
+
+        self.update_zero_and_negative_flags(result);
+    }
+
     fn inx(&mut self) {
         self.x = self.x.wrapping_add(1);
         self.update_zero_and_negative_flags(self.x);
@@ -286,6 +296,7 @@ impl Cpu {
                 0xE9 | 0xE5 | 0xF5 | 0xED | 0xFD | 0xF9 | 0xE1 | 0xF1 => {
                     self.sbc(&instruction.addressing_mode);
                 }
+                0xE6 | 0xF6 | 0xEE | 0xFE => self.inc(&instruction.addressing_mode),
                 0xE8 => self.inx(),
 
                 // Jump
@@ -487,6 +498,14 @@ mod tests {
                 cpu.load_and_run(vec![0xA9, 0x50, 0x69, 0x50, 0x00]);
                 assert_eq!(cpu.a, 0xA0);
                 assert_eq!(cpu.get_overflow_flag(), 1);
+            }
+
+            #[test]
+            fn test_0xe6_inc() {
+                let mut cpu = Cpu::new();
+                cpu.mem_write(0x10, 0x35);
+                cpu.load_and_run(vec![0xE6, 0x10, 0x00]);
+                assert_eq!(cpu.mem_read(0x10), 0x36);
             }
 
             #[test]
