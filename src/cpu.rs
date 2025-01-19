@@ -129,6 +129,7 @@ impl Cpu {
 
                 // Shift
                 0x0A | 0x06 | 0x16 | 0x0E | 0x1E => self.asl(&instruction.addressing_mode),
+                0x4A | 0x46 | 0x56 | 0x4E | 0x5E => self.lsr(&instruction.addressing_mode),
 
                 // Jump
                 0x00 => return,
@@ -260,7 +261,7 @@ impl Cpu {
     // Shift
 
     fn asl(&mut self, mode: &AddressingMode) {
-        if let AddressingMode::Accumulator = mode {
+        if mode == &AddressingMode::Accumulator {
             let carry_flag_value = (self.a & 0x80) >> 7;
             self.a <<= 1;
 
@@ -272,6 +273,26 @@ impl Cpu {
 
             let carry_flag_value = (value & 0x80) >> 7;
             let result = value << 1;
+            self.mem_write(addr, result);
+
+            self.update_carry_flag(carry_flag_value);
+            self.update_zero_and_negative_flags(result);
+        }
+    }
+
+    fn lsr(&mut self, mode: &AddressingMode) {
+        if mode == &AddressingMode::Accumulator {
+            let carry_flag_value = self.a & 0x01;
+            self.a >>= 1;
+
+            self.update_carry_flag(carry_flag_value);
+            self.update_zero_and_negative_flags(self.a);
+        } else {
+            let addr = self.get_address(mode);
+            let value = self.mem_read(addr);
+
+            let carry_flag_value = value & 0x01;
+            let result = value >> 1;
             self.mem_write(addr, result);
 
             self.update_carry_flag(carry_flag_value);
@@ -654,6 +675,23 @@ mod tests {
                 cpu.load_and_run(vec![0x06, 0x10, 0x00]);
                 assert_eq!(cpu.mem_read(0x10), 0xFE);
                 assert_eq!(cpu.get_carry_flag(), 1);
+            }
+
+            #[test]
+            fn test_0x4a_lsr_accumulator() {
+                let mut cpu = Cpu::new();
+                cpu.load_and_run(vec![0xA9, 0xFF, 0x4A, 0x00]);
+                assert_eq!(cpu.a, 0x7F);
+                assert_eq!(cpu.get_carry_flag(), 1);
+            }
+
+            #[test]
+            fn test_0x46_lsr_from_memory() {
+                let mut cpu = Cpu::new();
+                cpu.mem_write(0x10, 0x02);
+                cpu.load_and_run(vec![0x46, 0x10, 0x00]);
+                assert_eq!(cpu.mem_read(0x10), 0x01);
+                assert_eq!(cpu.get_carry_flag(), 0);
             }
         }
 
