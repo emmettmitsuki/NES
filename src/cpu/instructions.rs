@@ -116,6 +116,13 @@ lazy_static! {
 
         Instruction::new(0x88, "DEY", 1, 2, AddressingMode::Implicit),
 
+        //Shift
+        Instruction::new(0x0A, "ASL", 1, 2, AddressingMode::Accumulator),
+        Instruction::new(0x06, "ASL", 2, 5, AddressingMode::ZeroPage),
+        Instruction::new(0x16, "ASL", 2, 6, AddressingMode::ZeroPageX),
+        Instruction::new(0x0E, "ASL", 3, 6, AddressingMode::Absolute),
+        Instruction::new(0x1E, "ASL", 3, 7, AddressingMode::AbsoluteX),
+
         // Jump
         Instruction::new(0x00, "BRK", 1, 7, AddressingMode::Implicit),
         // Instruction::new(0x00, "BRK", 2, 7, AddressingMode::Immediate),

@@ -127,6 +127,9 @@ impl Cpu {
                 0xC8 => self.iny(),
                 0x88 => self.dey(),
 
+                // Shift
+                0x0A | 0x06 | 0x16 | 0x0E | 0x1E => self.asl(&instruction.addressing_mode),
+
                 // Jump
                 0x00 => return,
                 _ => panic!("opcode '{:X}' not recognised", opcode),
@@ -254,6 +257,28 @@ impl Cpu {
         self.update_zero_and_negative_flags(self.y);
     }
 
+    // Shift
+
+    fn asl(&mut self, mode: &AddressingMode) {
+        if let AddressingMode::Accumulator = mode {
+            let carry_flag_value = (self.a & 0x80) >> 7;
+            self.a <<= 1;
+
+            self.update_carry_flag(carry_flag_value);
+            self.update_zero_and_negative_flags(self.a);
+        } else {
+            let addr = self.get_address(mode);
+            let value = self.mem_read(addr);
+
+            let carry_flag_value = (value & 0x80) >> 7;
+            let result = value << 1;
+            self.mem_write(addr, result);
+
+            self.update_carry_flag(carry_flag_value);
+            self.update_zero_and_negative_flags(result);
+        }
+    }
+
     // Other
 
     fn add_to_accumulator(&mut self, value: u8) {
@@ -268,7 +293,7 @@ impl Cpu {
         self.a = result;
 
         self.update_overflow_flag(overflow_flag_value);
-        self.update_carry_flag(overflow);
+        self.update_carry_flag(if overflow { 1 } else { 0 });
         self.update_zero_and_negative_flags(self.a);
     }
 
@@ -340,9 +365,8 @@ impl Cpu {
         }
     }
 
-    // sets carry flag if overflow occured
-    fn update_carry_flag(&mut self, overflow: bool) {
-        if overflow {
+    fn update_carry_flag(&mut self, value: u8) {
+        if value != 0 {
             self.status |= StatusFlags::Carry;
         } else {
             self.status &= !StatusFlags::Carry;
@@ -609,6 +633,27 @@ mod tests {
                 cpu.load_and_run(vec![0xA0, 0x01, 0x88, 0x00]);
                 assert_eq!(cpu.y, 0x00);
                 assert_eq!(cpu.get_zero_flag(), 1);
+            }
+        }
+
+        mod shift {
+            use super::*;
+
+            #[test]
+            fn test_0x0a_asl_accumulator() {
+                let mut cpu = Cpu::new();
+                cpu.load_and_run(vec![0xA9, 0xFF, 0x0A, 0x00]);
+                assert_eq!(cpu.a, 0xFE);
+                assert_eq!(cpu.get_carry_flag(), 1);
+            }
+
+            #[test]
+            fn test_0x06_asl_from_memory() {
+                let mut cpu = Cpu::new();
+                cpu.mem_write(0x10, 0xFF);
+                cpu.load_and_run(vec![0x06, 0x10, 0x00]);
+                assert_eq!(cpu.mem_read(0x10), 0xFE);
+                assert_eq!(cpu.get_carry_flag(), 1);
             }
         }
 
