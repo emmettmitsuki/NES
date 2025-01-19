@@ -163,6 +163,16 @@ impl Cpu {
         self.update_zero_and_negative_flags(result);
     }
 
+    fn dec(&mut self, mode: &AddressingMode) {
+        let addr = self.get_address(mode);
+        let value = self.mem_read(addr);
+
+        let result = value.wrapping_sub(1);
+        self.mem_write(addr, result);
+
+        self.update_zero_and_negative_flags(result);
+    }
+
     fn inx(&mut self) {
         self.x = self.x.wrapping_add(1);
         self.update_zero_and_negative_flags(self.x);
@@ -297,6 +307,7 @@ impl Cpu {
                     self.sbc(&instruction.addressing_mode);
                 }
                 0xE6 | 0xF6 | 0xEE | 0xFE => self.inc(&instruction.addressing_mode),
+                0xC6 | 0xD6 | 0xCE | 0xDE => self.dec(&instruction.addressing_mode),
                 0xE8 => self.inx(),
 
                 // Jump
@@ -506,6 +517,14 @@ mod tests {
                 cpu.mem_write(0x10, 0x35);
                 cpu.load_and_run(vec![0xE6, 0x10, 0x00]);
                 assert_eq!(cpu.mem_read(0x10), 0x36);
+            }
+
+            #[test]
+            fn test_0xc6_dec() {
+                let mut cpu = Cpu::new();
+                cpu.mem_write(0x12, 0xEF);
+                cpu.load_and_run(vec![0xC6, 0x12, 0x00]);
+                assert_eq!(cpu.mem_read(0x12), 0xEE);
             }
 
             #[test]
