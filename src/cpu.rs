@@ -204,25 +204,15 @@ impl Cpu {
     fn adc(&mut self, mode: &AddressingMode) {
         let addr = self.get_address(mode);
         let value = self.mem_read(addr);
-        let carry_flag = self.get_carry_flag();
 
-        let (result, overflow) = {
-            let (res, ovf1) = self.a.overflowing_add(value);
-            let (res, ovf2) = res.overflowing_add(carry_flag);
-            (res, ovf1 || ovf2)
-        };
-
-        let overflow_flag_value = (result ^ self.a) & (result ^ value) & 0x80;
-
-        self.a = result;
-
-        self.update_overflow_flag(overflow_flag_value);
-        self.update_carry_flag(overflow);
-        self.update_zero_and_negative_flags(self.a);
+        self.add_to_accumulator(value);
     }
 
     fn sbc(&mut self, mode: &AddressingMode) {
-        todo!()
+        let addr = self.get_address(mode);
+        let value = self.mem_read(addr);
+
+        self.add_to_accumulator(!value);
     }
 
     fn inc(&mut self, mode: &AddressingMode) {
@@ -266,6 +256,22 @@ impl Cpu {
     }
 
     // Other
+
+    fn add_to_accumulator(&mut self, value: u8) {
+        let (result, overflow) = {
+            let (res, ovf1) = self.a.overflowing_add(value);
+            let (res, ovf2) = res.overflowing_add(self.get_carry_flag());
+            (res, ovf1 || ovf2)
+        };
+
+        let overflow_flag_value = (result ^ self.a) & (result ^ value) & 0x80;
+
+        self.a = result;
+
+        self.update_overflow_flag(overflow_flag_value);
+        self.update_carry_flag(overflow);
+        self.update_zero_and_negative_flags(self.a);
+    }
 
     fn mem_read(&self, addr: u16) -> u8 {
         self.memory[addr as usize]
@@ -530,6 +536,29 @@ mod tests {
                 let mut cpu = Cpu::new();
                 cpu.load_and_run(vec![0xA9, 0x50, 0x69, 0x50, 0x00]);
                 assert_eq!(cpu.a, 0xA0);
+                assert_eq!(cpu.get_overflow_flag(), 1);
+            }
+
+            #[test]
+            fn test_0xe9_sbc() {
+                let mut cpu = Cpu::new();
+                cpu.load_and_run(vec![0xA9, 0x03, 0xE9, 0x01, 0x00]);
+                assert_eq!(cpu.a, 0x01);
+            }
+
+            #[test]
+            fn test_0xe9_sbc_carry_flag() {
+                let mut cpu = Cpu::new();
+                cpu.load_and_run(vec![0xA9, 0xFF, 0xE9, 0x30, 0x00]);
+                assert_eq!(cpu.a, 0xCE);
+                assert_eq!(cpu.get_carry_flag(), 1);
+            }
+
+            #[test]
+            fn test_0xe9_sbc_overflow_flag() {
+                let mut cpu = Cpu::new();
+                cpu.load_and_run(vec![0xA9, 0x50, 0xE9, 0xB0, 0x00]);
+                assert_eq!(cpu.a, 0x9F);
                 assert_eq!(cpu.get_overflow_flag(), 1);
             }
 
