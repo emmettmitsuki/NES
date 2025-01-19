@@ -160,6 +160,15 @@ lazy_static! {
         Instruction::new(0x01, "ORA", 2, 6, AddressingMode::IndirectX),
         Instruction::new(0x11, "ORA", 2, 5 /* 6 if page crossed */, AddressingMode::IndirectY),
 
+        Instruction::new(0x49, "EOR", 2, 2, AddressingMode::Immediate),
+        Instruction::new(0x45, "EOR", 2, 3, AddressingMode::ZeroPage),
+        Instruction::new(0x55, "EOR", 2, 4, AddressingMode::ZeroPageX),
+        Instruction::new(0x4D, "EOR", 3, 4, AddressingMode::Absolute),
+        Instruction::new(0x5D, "EOR", 3, 4 /* 5 if page crossed */, AddressingMode::AbsoluteX),
+        Instruction::new(0x59, "EOR", 3, 4 /* 5 if page crossed */, AddressingMode::AbsoluteY),
+        Instruction::new(0x41, "EOR", 2, 6, AddressingMode::IndirectX),
+        Instruction::new(0x51, "EOR", 2, 5 /* 6 if page crossed */, AddressingMode::IndirectY),
+
         // Jump
         Instruction::new(0x00, "BRK", 1, 7, AddressingMode::Implicit),
         // Instruction::new(0x00, "BRK", 2, 7, AddressingMode::Immediate),
