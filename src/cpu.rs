@@ -149,6 +149,10 @@ impl Cpu {
         self.update_zero_and_negative_flags(self.a);
     }
 
+    fn sbc(&mut self, mode: &AddressingMode) {
+        todo!()
+    }
+
     fn inx(&mut self) {
         self.x = self.x.wrapping_add(1);
         self.update_zero_and_negative_flags(self.x);
@@ -278,6 +282,9 @@ impl Cpu {
                 // Arithmetic
                 0x69 | 0x65 | 0x75 | 0x6D | 0x7D | 0x79 | 0x61 | 0x71 => {
                     self.adc(&instruction.addressing_mode);
+                }
+                0xE9 | 0xE5 | 0xF5 | 0xED | 0xFD | 0xF9 | 0xE1 | 0xF1 => {
+                    self.sbc(&instruction.addressing_mode);
                 }
                 0xE8 => self.inx(),
 

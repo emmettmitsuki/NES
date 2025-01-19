@@ -89,6 +89,15 @@ lazy_static! {
         Instruction::new(0x61, "ADC", 2, 6, AddressingMode::IndirectX),
         Instruction::new(0x71, "ADC", 2, 5 /* 6 if page crossed */, AddressingMode::IndirectY),
 
+        Instruction::new(0xE9, "SBC", 2, 2, AddressingMode::Immediate),
+        Instruction::new(0xE5, "SBC", 2, 3, AddressingMode::ZeroPage),
+        Instruction::new(0xF5, "SBC", 2, 4, AddressingMode::ZeroPageX),
+        Instruction::new(0xED, "SBC", 3, 4, AddressingMode::Absolute),
+        Instruction::new(0xFD, "SBC", 3, 4 /* 5 if page crossed */, AddressingMode::AbsoluteX),
+        Instruction::new(0xF9, "SBC", 3, 4 /* 5 if page crossed */, AddressingMode::AbsoluteY),
+        Instruction::new(0xE1, "SBC", 2, 6, AddressingMode::IndirectX),
+        Instruction::new(0xF1, "SBC", 2, 5 /* 6 if page crossed */, AddressingMode::IndirectY),
+
         Instruction::new(0xE8, "INX", 1, 2, AddressingMode::Implicit),
 
         // Jump
