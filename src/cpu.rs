@@ -64,6 +64,78 @@ impl Cpu {
         }
     }
 
+    pub fn load_and_run(&mut self, program: Vec<u8>) {
+        self.load(program);
+        self.reset();
+        self.run();
+    }
+
+    pub fn load(&mut self, program: Vec<u8>) {
+        self.memory[PROGRAM_START_ADDRESS..(PROGRAM_START_ADDRESS + program.len())]
+            .copy_from_slice(&program);
+        self.mem_write_u16(PROGRAM_COUNTER_RESET_ADDRESS, PROGRAM_START_ADDRESS as u16);
+    }
+
+    pub fn reset(&mut self) {
+        self.a = 0;
+        self.x = 0;
+        self.y = 0;
+        // TODO: change reset value
+        self.status = 0;
+
+        // TODO: self.stack -= 3;
+
+        self.pc = self.mem_read_u16(PROGRAM_COUNTER_RESET_ADDRESS);
+    }
+
+    pub fn run(&mut self) {
+        loop {
+            let opcode = self.mem_read(self.pc);
+            self.pc += 1;
+
+            let instruction = INSTRUCTION_MAP.get(&opcode).unwrap();
+
+            match opcode {
+                // Access
+                0xA9 | 0xA5 | 0xB5 | 0xAD | 0xBD | 0xB9 | 0xA1 | 0xB1 => {
+                    self.lda(&instruction.addressing_mode)
+                }
+                0x85 | 0x95 | 0x8D | 0x9D | 0x99 | 0x81 | 0x91 => {
+                    self.sta(&instruction.addressing_mode)
+                }
+                0xA2 | 0xA6 | 0xB6 | 0xAE | 0xBE => self.ldx(&instruction.addressing_mode),
+                0x86 | 0x96 | 0x8E => self.stx(&instruction.addressing_mode),
+                0xA0 | 0xA4 | 0xB4 | 0xAC | 0xBC => self.ldy(&instruction.addressing_mode),
+                0x84 | 0x94 | 0x8C => self.sty(&instruction.addressing_mode),
+
+                // Transfer
+                0xAA => self.tax(),
+                0x8A => self.txa(),
+                0xA8 => self.tay(),
+                0x98 => self.tya(),
+
+                // Arithmetic
+                0x69 | 0x65 | 0x75 | 0x6D | 0x7D | 0x79 | 0x61 | 0x71 => {
+                    self.adc(&instruction.addressing_mode);
+                }
+                0xE9 | 0xE5 | 0xF5 | 0xED | 0xFD | 0xF9 | 0xE1 | 0xF1 => {
+                    self.sbc(&instruction.addressing_mode);
+                }
+                0xE6 | 0xF6 | 0xEE | 0xFE => self.inc(&instruction.addressing_mode),
+                0xC6 | 0xD6 | 0xCE | 0xDE => self.dec(&instruction.addressing_mode),
+                0xCA => self.dex(),
+                0xE8 => self.inx(),
+                0xC8 => self.iny(),
+                0x88 => self.dey(),
+
+                // Jump
+                0x00 => return,
+                _ => panic!("opcode '{:X}' not recognised", opcode),
+            }
+            self.pc += (instruction.bytes - 1) as u16;
+        }
+    }
+
     // Access
 
     fn lda(&mut self, mode: &AddressingMode) {
@@ -195,6 +267,28 @@ impl Cpu {
 
     // Other
 
+    fn mem_read(&self, addr: u16) -> u8 {
+        self.memory[addr as usize]
+    }
+
+    fn mem_write(&mut self, addr: u16, data: u8) {
+        self.memory[addr as usize] = data;
+    }
+
+    fn mem_read_u16(&self, addr: u16) -> u16 {
+        let lo = self.mem_read(addr) as u16;
+        let hi = self.mem_read(addr + 1) as u16;
+
+        (hi << 8) | lo
+    }
+
+    fn mem_write_u16(&mut self, addr: u16, data: u16) {
+        let hi = (data >> 8) as u8;
+        let lo = (data & 0xFF) as u8;
+        self.mem_write(addr, lo);
+        self.mem_write(addr + 1, hi);
+    }
+
     fn update_zero_and_negative_flags(&mut self, result: u8) {
         self.update_zero_flag(result);
         self.update_negative_flag(result);
@@ -243,100 +337,6 @@ impl Cpu {
             self.status |= StatusFlags::Carry.bits();
         } else {
             self.status &= !StatusFlags::Carry.bits();
-        }
-    }
-
-    fn mem_read(&self, addr: u16) -> u8 {
-        self.memory[addr as usize]
-    }
-
-    fn mem_write(&mut self, addr: u16, data: u8) {
-        self.memory[addr as usize] = data;
-    }
-
-    fn mem_read_u16(&self, addr: u16) -> u16 {
-        let lo = self.mem_read(addr) as u16;
-        let hi = self.mem_read(addr + 1) as u16;
-
-        (hi << 8) | lo
-    }
-
-    fn mem_write_u16(&mut self, addr: u16, data: u16) {
-        let hi = (data >> 8) as u8;
-        let lo = (data & 0xFF) as u8;
-        self.mem_write(addr, lo);
-        self.mem_write(addr + 1, hi);
-    }
-
-    pub fn load_and_run(&mut self, program: Vec<u8>) {
-        self.load(program);
-        self.reset();
-        self.run();
-    }
-
-    pub fn load(&mut self, program: Vec<u8>) {
-        self.memory[PROGRAM_START_ADDRESS..(PROGRAM_START_ADDRESS + program.len())]
-            .copy_from_slice(&program);
-        self.mem_write_u16(PROGRAM_COUNTER_RESET_ADDRESS, PROGRAM_START_ADDRESS as u16);
-    }
-
-    pub fn reset(&mut self) {
-        self.a = 0;
-        self.x = 0;
-        self.y = 0;
-        // TODO: change reset value
-        self.status = 0;
-
-        // TODO: self.stack -= 3;
-
-        self.pc = self.mem_read_u16(PROGRAM_COUNTER_RESET_ADDRESS);
-    }
-
-    pub fn run(&mut self) {
-        loop {
-            let opcode = self.mem_read(self.pc);
-            self.pc += 1;
-
-            let instruction = INSTRUCTION_MAP.get(&opcode).unwrap();
-
-            match opcode {
-                // Access
-                0xA9 | 0xA5 | 0xB5 | 0xAD | 0xBD | 0xB9 | 0xA1 | 0xB1 => {
-                    self.lda(&instruction.addressing_mode)
-                }
-                0x85 | 0x95 | 0x8D | 0x9D | 0x99 | 0x81 | 0x91 => {
-                    self.sta(&instruction.addressing_mode)
-                }
-                0xA2 | 0xA6 | 0xB6 | 0xAE | 0xBE => self.ldx(&instruction.addressing_mode),
-                0x86 | 0x96 | 0x8E => self.stx(&instruction.addressing_mode),
-                0xA0 | 0xA4 | 0xB4 | 0xAC | 0xBC => self.ldy(&instruction.addressing_mode),
-                0x84 | 0x94 | 0x8C => self.sty(&instruction.addressing_mode),
-
-                // Transfer
-                0xAA => self.tax(),
-                0x8A => self.txa(),
-                0xA8 => self.tay(),
-                0x98 => self.tya(),
-
-                // Arithmetic
-                0x69 | 0x65 | 0x75 | 0x6D | 0x7D | 0x79 | 0x61 | 0x71 => {
-                    self.adc(&instruction.addressing_mode);
-                }
-                0xE9 | 0xE5 | 0xF5 | 0xED | 0xFD | 0xF9 | 0xE1 | 0xF1 => {
-                    self.sbc(&instruction.addressing_mode);
-                }
-                0xE6 | 0xF6 | 0xEE | 0xFE => self.inc(&instruction.addressing_mode),
-                0xC6 | 0xD6 | 0xCE | 0xDE => self.dec(&instruction.addressing_mode),
-                0xCA => self.dex(),
-                0xE8 => self.inx(),
-                0xC8 => self.iny(),
-                0x88 => self.dey(),
-
-                // Jump
-                0x00 => return,
-                _ => panic!("opcode '{:X}' not recognised", opcode),
-            }
-            self.pc += (instruction.bytes - 1) as u16;
         }
     }
 
