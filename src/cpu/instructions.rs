@@ -103,6 +103,11 @@ lazy_static! {
         Instruction::new(0xEE, "INC", 3, 6, AddressingMode::Absolute),
         Instruction::new(0xFE, "INC", 3, 7, AddressingMode::AbsoluteX),
 
+        Instruction::new(0xC6, "DEC", 2, 5, AddressingMode::ZeroPage),
+        Instruction::new(0xD6, "DEC", 2, 6, AddressingMode::ZeroPageX),
+        Instruction::new(0xCE, "DEC", 3, 6, AddressingMode::Absolute),
+        Instruction::new(0xDE, "DEC", 3, 7, AddressingMode::AbsoluteX),
+
         Instruction::new(0xE8, "INX", 1, 2, AddressingMode::Implicit),
 
         // Jump
