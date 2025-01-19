@@ -29,7 +29,7 @@ pub struct Cpu {
     a: u8,
     x: u8,
     y: u8,
-    status: u8,
+    status: StatusFlags,
     sp: u8,
     pc: u16,
 
@@ -56,7 +56,7 @@ impl Cpu {
             a: 0,
             x: 0,
             y: 0,
-            status: 0,
+            status: StatusFlags::from_bits_retain(0b0010_0100),
             sp: 0,
             pc: 0,
 
@@ -80,8 +80,7 @@ impl Cpu {
         self.a = 0;
         self.x = 0;
         self.y = 0;
-        // TODO: change reset value
-        self.status = 0;
+        self.status |= StatusFlags::from_bits_retain(0b0010_0100);
 
         // TODO: self.stack -= 3;
 
@@ -302,47 +301,51 @@ impl Cpu {
 
     fn update_zero_flag(&mut self, result: u8) {
         if result == 0 {
-            self.status |= StatusFlags::Zero.bits();
+            self.status |= StatusFlags::Zero;
         } else {
-            self.status &= !StatusFlags::Zero.bits();
+            self.status &= !StatusFlags::Zero;
         }
     }
 
     fn update_negative_flag(&mut self, result: u8) {
         if result & StatusFlags::Negative.bits() != 0 {
-            self.status |= StatusFlags::Negative.bits();
+            self.status |= StatusFlags::Negative;
         } else {
-            self.status &= !StatusFlags::Negative.bits();
+            self.status &= !StatusFlags::Negative;
         }
     }
 
     fn get_zero_flag(&self) -> u8 {
-        (self.status & StatusFlags::Zero.bits()) >> 1
+        (self.status & StatusFlags::Zero).bits() >> 1
+    }
+
+    fn get_negative_flag(&self) -> u8 {
+        (self.status & StatusFlags::Negative).bits() >> 7
     }
 
     fn get_overflow_flag(&self) -> u8 {
-        (self.status & StatusFlags::Overflow.bits()) >> 6
+        (self.status & StatusFlags::Overflow).bits() >> 6
     }
 
     fn get_carry_flag(&self) -> u8 {
-        self.status & StatusFlags::Carry.bits()
+        (self.status & StatusFlags::Carry).bits()
     }
 
     // sets overflow flag to 0 if value == 0, else 1
     fn update_overflow_flag(&mut self, value: u8) {
         if value != 0 {
-            self.status |= StatusFlags::Overflow.bits();
+            self.status |= StatusFlags::Overflow;
         } else {
-            self.status &= !StatusFlags::Overflow.bits();
+            self.status &= !StatusFlags::Overflow;
         }
     }
 
     // sets carry flag if overflow occured
     fn update_carry_flag(&mut self, overflow: bool) {
         if overflow {
-            self.status |= StatusFlags::Carry.bits();
+            self.status |= StatusFlags::Carry;
         } else {
-            self.status &= !StatusFlags::Carry.bits();
+            self.status &= !StatusFlags::Carry;
         }
     }
 
@@ -417,15 +420,15 @@ mod tests {
                 let mut cpu = Cpu::new();
                 cpu.load_and_run(vec![0xA9, 0x05, 0x00]);
                 assert_eq!(cpu.a, 0x05);
-                assert_eq!(cpu.status & StatusFlags::Zero.bits(), 0b00);
-                assert_eq!(cpu.status & StatusFlags::Negative.bits(), 0b0);
+                assert_eq!(cpu.get_zero_flag(), 0);
+                assert_eq!(cpu.get_negative_flag(), 0);
             }
 
             #[test]
             fn test_0xa9_lda_zero_flag() {
                 let mut cpu = Cpu::new();
                 cpu.load_and_run(vec![0xA9, 0x00, 0x00]);
-                assert_eq!(cpu.status & StatusFlags::Zero.bits(), 0b10)
+                assert_eq!(cpu.get_zero_flag(), 1)
             }
 
             #[test]
