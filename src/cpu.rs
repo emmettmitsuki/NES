@@ -173,6 +173,11 @@ impl Cpu {
         self.update_zero_and_negative_flags(result);
     }
 
+    fn dex(&mut self) {
+        self.x = self.x.wrapping_sub(1);
+        self.update_zero_and_negative_flags(self.x);
+    }
+
     fn inx(&mut self) {
         self.x = self.x.wrapping_add(1);
         self.update_zero_and_negative_flags(self.x);
@@ -308,6 +313,7 @@ impl Cpu {
                 }
                 0xE6 | 0xF6 | 0xEE | 0xFE => self.inc(&instruction.addressing_mode),
                 0xC6 | 0xD6 | 0xCE | 0xDE => self.dec(&instruction.addressing_mode),
+                0xCA => self.dex(),
                 0xE8 => self.inx(),
 
                 // Jump
@@ -525,6 +531,13 @@ mod tests {
                 cpu.mem_write(0x12, 0xEF);
                 cpu.load_and_run(vec![0xC6, 0x12, 0x00]);
                 assert_eq!(cpu.mem_read(0x12), 0xEE);
+            }
+
+            #[test]
+            fn test_0xca_dex() {
+                let mut cpu = Cpu::new();
+                cpu.load_and_run(vec![0xA2, 0x13, 0xCA, 0x00]);
+                assert_eq!(cpu.x, 0x12);
             }
 
             #[test]
