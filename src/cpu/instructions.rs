@@ -141,6 +141,15 @@ lazy_static! {
         Instruction::new(0x6E, "ROR", 3, 6, AddressingMode::Absolute),
         Instruction::new(0x7E, "ROR", 3, 7, AddressingMode::AbsoluteX),
 
+        Instruction::new(0x29, "AND", 2, 2, AddressingMode::Immediate),
+        Instruction::new(0x25, "AND", 2, 3, AddressingMode::ZeroPage),
+        Instruction::new(0x35, "AND", 2, 4, AddressingMode::ZeroPageX),
+        Instruction::new(0x2D, "AND", 3, 4, AddressingMode::Absolute),
+        Instruction::new(0x3D, "AND", 3, 4 /* 5 if page crossed */, AddressingMode::AbsoluteX),
+        Instruction::new(0x39, "AND", 3, 4 /* 5 if page crossed */, AddressingMode::AbsoluteY),
+        Instruction::new(0x21, "AND", 2, 6, AddressingMode::IndirectX),
+        Instruction::new(0x31, "AND", 2, 5 /* 6 if page crossed */, AddressingMode::IndirectY),
+
         // Jump
         Instruction::new(0x00, "BRK", 1, 7, AddressingMode::Implicit),
         // Instruction::new(0x00, "BRK", 2, 7, AddressingMode::Immediate),

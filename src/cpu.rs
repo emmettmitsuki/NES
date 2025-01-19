@@ -133,6 +133,11 @@ impl Cpu {
                 0x2A | 0x26 | 0x36 | 0x2E | 0x3E => self.rol(&instruction.addressing_mode),
                 0x6A | 0x66 | 0x76 | 0x6E | 0x7E => self.ror(&instruction.addressing_mode),
 
+                // Bitwise
+                0x29 | 0x25 | 0x35 | 0x2D | 0x3D | 0x39 | 0x21 | 0x31 => {
+                    self.and(&instruction.addressing_mode)
+                }
+
                 // Jump
                 0x00 => return,
                 _ => panic!("opcode '{:X}' not recognised", opcode),
@@ -344,6 +349,17 @@ impl Cpu {
             self.update_carry_flag(carry_flag_value);
             self.update_zero_and_negative_flags(result);
         }
+    }
+
+    // Bitwise
+
+    fn and(&mut self, mode: &AddressingMode) {
+        let addr = self.get_address(mode);
+        let value = self.mem_read(addr);
+
+        self.a &= value;
+
+        self.update_zero_and_negative_flags(self.a);
     }
 
     // Other
@@ -782,6 +798,17 @@ mod tests {
                 cpu.load_and_run(vec![0x66, 0x10, 0x66, 0x10, 0x00]);
                 assert_eq!(cpu.mem_read(0x10), 0xBF);
                 assert_eq!(cpu.get_carry_flag(), 1);
+            }
+        }
+
+        mod bitwise {
+            use super::*;
+
+            #[test]
+            fn test_0x29_and() {
+                let mut cpu = Cpu::new();
+                cpu.load_and_run(vec![0xA9, 0x0F, 0x29, 0xAA, 0x00]);
+                assert_eq!(cpu.a, 0x0A);
             }
         }
 
