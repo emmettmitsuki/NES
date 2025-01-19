@@ -188,6 +188,11 @@ impl Cpu {
         self.update_zero_and_negative_flags(self.y);
     }
 
+    fn dey(&mut self) {
+        self.y = self.y.wrapping_sub(1);
+        self.update_zero_and_negative_flags(self.y);
+    }
+
     // Other
 
     fn update_zero_and_negative_flags(&mut self, result: u8) {
@@ -209,6 +214,10 @@ impl Cpu {
         } else {
             self.status &= !StatusFlags::Negative.bits();
         }
+    }
+
+    fn get_zero_flag(&self) -> u8 {
+        (self.status & StatusFlags::Zero.bits()) >> 1
     }
 
     fn get_overflow_flag(&self) -> u8 {
@@ -321,6 +330,7 @@ impl Cpu {
                 0xCA => self.dex(),
                 0xE8 => self.inx(),
                 0xC8 => self.iny(),
+                0x88 => self.dey(),
 
                 // Jump
                 0x00 => return,
@@ -559,6 +569,14 @@ mod tests {
                 let mut cpu = Cpu::new();
                 cpu.load_and_run(vec![0xA0, 0x01, 0xC8, 0x00]);
                 assert_eq!(cpu.y, 0x02);
+            }
+
+            #[test]
+            fn test_0x88_dey() {
+                let mut cpu = Cpu::new();
+                cpu.load_and_run(vec![0xA0, 0x01, 0x88, 0x00]);
+                assert_eq!(cpu.y, 0x00);
+                assert_eq!(cpu.get_zero_flag(), 1);
             }
         }
 
