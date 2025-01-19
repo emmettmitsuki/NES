@@ -112,6 +112,8 @@ lazy_static! {
 
         Instruction::new(0xE8, "INX", 1, 2, AddressingMode::Implicit),
 
+        Instruction::new(0xC8, "INY", 1, 2, AddressingMode::Implicit),
+
         // Jump
         Instruction::new(0x00, "BRK", 1, 7, AddressingMode::Implicit),
         // Instruction::new(0x00, "BRK", 2, 7, AddressingMode::Immediate),

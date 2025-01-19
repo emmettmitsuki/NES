@@ -183,6 +183,11 @@ impl Cpu {
         self.update_zero_and_negative_flags(self.x);
     }
 
+    fn iny(&mut self) {
+        self.y = self.y.wrapping_add(1);
+        self.update_zero_and_negative_flags(self.y);
+    }
+
     // Other
 
     fn update_zero_and_negative_flags(&mut self, result: u8) {
@@ -315,6 +320,7 @@ impl Cpu {
                 0xC6 | 0xD6 | 0xCE | 0xDE => self.dec(&instruction.addressing_mode),
                 0xCA => self.dex(),
                 0xE8 => self.inx(),
+                0xC8 => self.iny(),
 
                 // Jump
                 0x00 => return,
@@ -546,6 +552,13 @@ mod tests {
                 cpu.load_and_run(vec![0xA9, 0xFF, 0xAA, 0xE8, 0xE8, 0x00]);
 
                 assert_eq!(cpu.x, 1);
+            }
+
+            #[test]
+            fn test_0xc8_iny() {
+                let mut cpu = Cpu::new();
+                cpu.load_and_run(vec![0xA0, 0x01, 0xC8, 0x00]);
+                assert_eq!(cpu.y, 0x02);
             }
         }
 
