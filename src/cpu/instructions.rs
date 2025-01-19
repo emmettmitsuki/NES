@@ -169,6 +169,9 @@ lazy_static! {
         Instruction::new(0x41, "EOR", 2, 6, AddressingMode::IndirectX),
         Instruction::new(0x51, "EOR", 2, 5 /* 6 if page crossed */, AddressingMode::IndirectY),
 
+        Instruction::new(0x24, "BIT", 2, 3, AddressingMode::ZeroPage),
+        Instruction::new(0x2C, "BIT", 3, 4, AddressingMode::Absolute),
+
         // Jump
         Instruction::new(0x00, "BRK", 1, 7, AddressingMode::Implicit),
         // Instruction::new(0x00, "BRK", 2, 7, AddressingMode::Immediate),
