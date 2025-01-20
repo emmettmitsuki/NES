@@ -186,6 +186,10 @@ lazy_static! {
         Instruction::new(0xE4, "CPX", 2, 3, AddressingMode::ZeroPage),
         Instruction::new(0xEC, "CPX", 3, 4, AddressingMode::Absolute),
 
+        Instruction::new(0xC0, "CPY", 2, 2, AddressingMode::Immediate),
+        Instruction::new(0xC4, "CPY", 2, 3, AddressingMode::ZeroPage),
+        Instruction::new(0xCC, "CPY", 3, 4, AddressingMode::Absolute),
+
         // Jump
         Instruction::new(0x00, "BRK", 1, 7, AddressingMode::Implicit),
         // Instruction::new(0x00, "BRK", 2, 7, AddressingMode::Immediate),
