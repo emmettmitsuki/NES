@@ -172,6 +172,16 @@ lazy_static! {
         Instruction::new(0x24, "BIT", 2, 3, AddressingMode::ZeroPage),
         Instruction::new(0x2C, "BIT", 3, 4, AddressingMode::Absolute),
 
+        // Compare
+        Instruction::new(0xC9, "CMP", 2, 2, AddressingMode::Immediate),
+        Instruction::new(0xC5, "CMP", 2, 3, AddressingMode::ZeroPage),
+        Instruction::new(0xD5, "CMP", 2, 4, AddressingMode::ZeroPageX),
+        Instruction::new(0xCD, "CMP", 3, 4, AddressingMode::Absolute),
+        Instruction::new(0xDD, "CMP", 3, 4 /* 5 if page crossed */, AddressingMode::AbsoluteX),
+        Instruction::new(0xD9, "CMP", 3, 4 /* 5 if page crossed */, AddressingMode::AbsoluteY),
+        Instruction::new(0xC1, "CMP", 2, 6, AddressingMode::IndirectX),
+        Instruction::new(0xD1, "CMP", 2, 5 /* 6 if page crossed */, AddressingMode::IndirectY),
+
         // Jump
         Instruction::new(0x00, "BRK", 1, 7, AddressingMode::Implicit),
         // Instruction::new(0x00, "BRK", 2, 7, AddressingMode::Immediate),

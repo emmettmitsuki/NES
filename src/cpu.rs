@@ -145,6 +145,11 @@ impl Cpu {
                 }
                 0x24 | 0x2C => self.bit(&instruction.addressing_mode),
 
+                // Compare
+                0xC9 | 0xC5 | 0xD5 | 0xCD | 0xDD | 0xD9 | 0xC1 | 0xD1 => {
+                    self.cmp(&instruction.addressing_mode)
+                }
+
                 // Jump
                 0x00 => return,
                 _ => panic!("opcode '{:X}' not recognised", opcode),
@@ -395,6 +400,18 @@ impl Cpu {
 
         self.update_zero_and_negative_flags(result);
         self.set_overflow_flag((value & 0x40) != 0);
+    }
+
+    // Compare
+
+    fn cmp(&mut self, mode: &AddressingMode) {
+        let addr = self.get_address(mode);
+        let value = self.mem_read(addr);
+
+        let result = self.a.wrapping_sub(value);
+
+        self.set_carry_flag(self.a >= value);
+        self.update_zero_and_negative_flags(result);
     }
 
     // Other
@@ -868,6 +885,27 @@ mod tests {
                 assert_eq!(cpu.get_zero_flag(), 0);
                 assert_eq!(cpu.get_overflow_flag(), 1);
                 assert_eq!(cpu.get_negative_flag(), 1);
+            }
+        }
+
+        mod compare {
+            use super::*;
+
+            #[test]
+            fn test_0xc9_cmp_zero_flag() {
+                let mut cpu = Cpu::new();
+                cpu.load_and_run(vec![0xA9, 0x25, 0xC9, 0x25, 0x00]);
+                assert_eq!(cpu.get_zero_flag(), 1);
+                assert_eq!(cpu.get_carry_flag(), 1);
+            }
+
+            #[test]
+            fn test_0xc5_cmp_negative_flag() {
+                let mut cpu = Cpu::new();
+                cpu.mem_write(0x10, 0x35);
+                cpu.load_and_run(vec![0xA9, 0x12, 0xC5, 0x10, 0x00]);
+                assert_eq!(cpu.get_negative_flag(), 1);
+                assert_eq!(cpu.get_carry_flag(), 0);
             }
         }
 
