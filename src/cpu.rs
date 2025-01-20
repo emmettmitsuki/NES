@@ -149,6 +149,7 @@ impl Cpu {
                 0xC9 | 0xC5 | 0xD5 | 0xCD | 0xDD | 0xD9 | 0xC1 | 0xD1 => {
                     self.cmp(&instruction.addressing_mode)
                 }
+                0xE0 | 0xE4 | 0xEC => self.cpx(&instruction.addressing_mode),
 
                 // Jump
                 0x00 => return,
@@ -411,6 +412,16 @@ impl Cpu {
         let result = self.a.wrapping_sub(value);
 
         self.set_carry_flag(self.a >= value);
+        self.update_zero_and_negative_flags(result);
+    }
+
+    fn cpx(&mut self, mode: &AddressingMode) {
+        let addr = self.get_address(mode);
+        let value = self.mem_read(addr);
+
+        let result = self.x.wrapping_sub(value);
+
+        self.set_carry_flag(self.x >= value);
         self.update_zero_and_negative_flags(result);
     }
 
@@ -906,6 +917,23 @@ mod tests {
                 cpu.load_and_run(vec![0xA9, 0x12, 0xC5, 0x10, 0x00]);
                 assert_eq!(cpu.get_negative_flag(), 1);
                 assert_eq!(cpu.get_carry_flag(), 0);
+            }
+
+            #[test]
+            fn test_0xe0_cpx_negative_flag() {
+                let mut cpu = Cpu::new();
+                cpu.load_and_run(vec![0xA2, 0x12, 0xE0, 0x13, 0x00]);
+                assert_eq!(cpu.get_negative_flag(), 1);
+                assert_eq!(cpu.get_carry_flag(), 0);
+            }
+
+            #[test]
+            fn test_0xe4_cpx_zero_flag() {
+                let mut cpu = Cpu::new();
+                cpu.mem_write(0x10, 0x12);
+                cpu.load_and_run(vec![0xA2, 0x12, 0xE4, 0x10, 0x00]);
+                assert_eq!(cpu.get_zero_flag(), 1);
+                assert_eq!(cpu.get_carry_flag(), 1);
             }
         }
 
