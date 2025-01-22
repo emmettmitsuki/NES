@@ -192,6 +192,13 @@ lazy_static! {
 
         // Branch
         Instruction::new(0x90, "BCC", 2, 2 /* 3 if branch taken, 4 if page crossed */, AddressingMode::Relative),
+        Instruction::new(0xB0, "BCS", 2, 2 /* 3 if branch taken, 4 if page crossed */, AddressingMode::Relative),
+        Instruction::new(0xF0, "BEQ", 2, 2 /* 3 if branch taken, 4 if page crossed */, AddressingMode::Relative),
+        Instruction::new(0xD0, "BNE", 2, 2 /* 3 if branch taken, 4 if page crossed */, AddressingMode::Relative),
+        Instruction::new(0x10, "BPL", 2, 2 /* 3 if branch taken, 4 if page crossed */, AddressingMode::Relative),
+        Instruction::new(0x30, "BMI", 2, 2 /* 3 if branch taken, 4 if page crossed */, AddressingMode::Relative),
+        Instruction::new(0x50, "BVC", 2, 2 /* 3 if branch taken, 4 if page crossed */, AddressingMode::Relative),
+        Instruction::new(0x70, "BVC", 2, 2 /* 3 if branch taken, 4 if page crossed */, AddressingMode::Relative),
 
         // Jump
         Instruction::new(0x00, "BRK", 1, 7, AddressingMode::Implicit),

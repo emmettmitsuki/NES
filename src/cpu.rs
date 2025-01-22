@@ -154,7 +154,14 @@ impl Cpu {
                 0xC0 | 0xC4 | 0xCC => self.cpy(&instruction.addressing_mode),
 
                 // Branch
-                0x90 => self.bcc(&instruction.addressing_mode),
+                0x90 => self.bcc(),
+                0xB0 => self.bcs(),
+                0xF0 => self.beq(),
+                0xD0 => self.bne(),
+                0x10 => self.bpl(),
+                0x30 => self.bmi(),
+                0x50 => self.bvc(),
+                0x70 => self.bvs(),
 
                 // Jump
                 0x00 => return,
@@ -444,11 +451,36 @@ impl Cpu {
 
     // Branch
 
-    fn bcc(&mut self, mode: &AddressingMode) {
-        let addr = self.get_address(mode);
-        let value = self.mem_read(addr);
-
+    fn bcc(&mut self) {
         self.branch(self.get_carry_flag() == 0);
+    }
+
+    fn bcs(&mut self) {
+        self.branch(self.get_carry_flag() != 0);
+    }
+
+    fn beq(&mut self) {
+        self.branch(self.get_zero_flag() != 0);
+    }
+
+    fn bne(&mut self) {
+        self.branch(self.get_zero_flag() == 0);
+    }
+
+    fn bpl(&mut self) {
+        self.branch(self.get_negative_flag() == 0);
+    }
+
+    fn bmi(&mut self) {
+        self.branch(self.get_negative_flag() != 0);
+    }
+
+    fn bvc(&mut self) {
+        self.branch(self.get_overflow_flag() == 0);
+    }
+
+    fn bvs(&mut self) {
+        self.branch(self.get_overflow_flag() != 0);
     }
 
     fn branch(&mut self, cond: bool) {
