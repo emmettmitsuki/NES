@@ -8,6 +8,8 @@ const MEMORY_SIZE: usize = 2048;
 const PROGRAM_START_ADDRESS: usize = 0x8000;
 const PROGRAM_COUNTER_RESET_ADDRESS: u16 = 0xFFFC;
 
+const STACK_START_ADDRESS: u16 = 0x0100;
+
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum AddressingMode {
     Implicit,
@@ -57,7 +59,7 @@ impl Cpu {
             x: 0,
             y: 0,
             status: StatusFlags::from_bits_retain(0b0010_0100),
-            sp: 0,
+            sp: 0xFF,
             pc: 0,
 
             memory: [0; 0xFFFF],
@@ -82,7 +84,7 @@ impl Cpu {
         self.y = 0;
         self.status |= StatusFlags::from_bits_retain(0b0010_0100);
 
-        // TODO: self.stack -= 3;
+        self.sp = 0xFF;
 
         self.pc = self.mem_read_u16(PROGRAM_COUNTER_RESET_ADDRESS);
     }
@@ -165,7 +167,10 @@ impl Cpu {
 
                 // Jump
                 0x4C | 0x6C => self.jmp(&instruction.addressing_mode),
+                0x20 => self.jsr(&instruction.addressing_mode),
+                0x60 => self.rts(),
                 0x00 => return,
+                0x40 => self.rti(),
                 _ => panic!("opcode '{:X}' not recognised", opcode),
             }
             if self.pc == pc_state {
@@ -500,6 +505,26 @@ impl Cpu {
         self.pc = addr;
     }
 
+    fn jsr(&mut self, mode: &AddressingMode) {
+        let addr = self.get_address(mode);
+
+        self.stack_push_u16(self.pc + 1);
+        self.pc = addr;
+    }
+
+    fn rts(&mut self) {
+        self.pc = self.stack_pop_u16();
+        self.pc += 1;
+    }
+
+    fn brk(&mut self) {
+        todo!()
+    }
+
+    fn rti(&mut self) {
+        todo!()
+    }
+
     // Other
 
     fn add_to_accumulator(&mut self, value: u8) {
@@ -516,6 +541,23 @@ impl Cpu {
         self.set_overflow_flag(overflow_flag_value);
         self.set_carry_flag(overflow);
         self.update_zero_and_negative_flags(self.a);
+    }
+
+    fn stack_push(&mut self, value: u8) {
+        self.mem_write(STACK_START_ADDRESS + self.sp as u16, value);
+        self.sp -= 1;
+    }
+
+    fn stack_push_u16(&mut self, value: u16) {
+        let addr = STACK_START_ADDRESS + self.sp as u16 - 1;
+        self.mem_write_u16(addr, value);
+        self.sp -= 2;
+    }
+
+    fn stack_pop_u16(&mut self) -> u16 {
+        let value = self.mem_read_u16(STACK_START_ADDRESS + self.sp as u16 + 1);
+        self.sp += 2;
+        value
     }
 
     fn mem_read(&self, addr: u16) -> u8 {
@@ -1067,6 +1109,23 @@ mod tests {
                     0xA9, 0x01, 0x85, 0xF0, 0xA9, 0xCC, 0x85, 0xF1, 0x6C, 0xF0, 0x00,
                 ]);
                 assert_eq!(cpu.pc, 0xCC02);
+            }
+
+            #[test]
+            fn test_0x20_jsr() {
+                let mut cpu = Cpu::new();
+                cpu.load_and_run(vec![0x20, 0xCC, 0x00]);
+                assert_eq!(cpu.sp, 0xFD);
+                assert_eq!(cpu.pc, 0x00CD);
+                assert_eq!(cpu.memory[0x01FE..=0x01FF], [0x02, 0x80]);
+            }
+
+            #[test]
+            fn test_0x60_rts() {
+                let mut cpu = Cpu::new();
+                cpu.load_and_run(vec![0xA9, 0x60, 0x8D, 0xCC, 0x00, 0x20, 0xCC, 0x00, 0x00]);
+                assert_eq!(cpu.sp, 0xFF);
+                assert_eq!(cpu.pc, PROGRAM_START_ADDRESS as u16 + 9);
             }
         }
 

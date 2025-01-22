@@ -204,8 +204,14 @@ lazy_static! {
         Instruction::new(0x4C, "JMP", 3, 3, AddressingMode::Absolute),
         Instruction::new(0x6C, "JMP", 3, 5, AddressingMode::Indirect),
 
+        Instruction::new(0x20, "JSR", 3, 6, AddressingMode::Absolute),
+
+        Instruction::new(0x60, "RTS", 1, 6, AddressingMode::Implicit),
+
         Instruction::new(0x00, "BRK", 1, 7, AddressingMode::Implicit),
         // Instruction::new(0x00, "BRK", 2, 7, AddressingMode::Immediate),
+
+        Instruction::new(0x40, "RTI", 1, 6, AddressingMode::Implicit),
     ];
 
     pub static ref INSTRUCTION_MAP: HashMap<u8, &'static Instruction> = {
