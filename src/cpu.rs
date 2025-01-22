@@ -171,6 +171,15 @@ impl Cpu {
                 0x60 => self.rts(),
                 0x00 => return,
                 0x40 => self.rti(),
+
+                // Stack
+                0x48 => self.pha(),
+                0x68 => self.pla(),
+                0x08 => self.php(),
+                0x28 => self.plp(),
+                0x9A => self.txs(),
+                0xBA => self.tsx(),
+
                 _ => panic!("opcode '{:X}' not recognised", opcode),
             }
             if self.pc == pc_state {
@@ -525,6 +534,35 @@ impl Cpu {
         todo!()
     }
 
+    // Stack
+
+    fn pha(&mut self) {
+        self.stack_push(self.a);
+    }
+
+    fn pla(&mut self) {
+        self.a = self.stack_pop();
+    }
+
+    fn php(&mut self) {
+        let ps = self.status.bits() | 0b00110000;
+        self.stack_push(ps);
+    }
+
+    // NOTE: the effect of changing I is delayed one instruction.
+    // TODO: implement ^
+    fn plp(&mut self) {
+        self.status = StatusFlags::from_bits_retain(self.stack_pop() & 0b11001111);
+    }
+
+    fn txs(&mut self) {
+        self.sp = self.x;
+    }
+
+    fn tsx(&mut self) {
+        self.x = self.sp;
+    }
+
     // Other
 
     fn add_to_accumulator(&mut self, value: u8) {
@@ -552,6 +590,12 @@ impl Cpu {
         let addr = STACK_START_ADDRESS + self.sp as u16 - 1;
         self.mem_write_u16(addr, value);
         self.sp -= 2;
+    }
+
+    fn stack_pop(&mut self) -> u8 {
+        let value = self.mem_read(STACK_START_ADDRESS + self.sp as u16 + 1);
+        self.sp += 1;
+        value
     }
 
     fn stack_pop_u16(&mut self) -> u16 {

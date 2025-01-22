@@ -212,6 +212,20 @@ lazy_static! {
         // Instruction::new(0x00, "BRK", 2, 7, AddressingMode::Immediate),
 
         Instruction::new(0x40, "RTI", 1, 6, AddressingMode::Implicit),
+
+        // Stack
+        Instruction::new(0x48, "PHA", 1, 3, AddressingMode::Implicit),
+
+        Instruction::new(0x68, "PLA", 1, 4, AddressingMode::Implicit),
+
+        Instruction::new(0x08, "PHP", 1, 3, AddressingMode::Implicit),
+
+        Instruction::new(0x28, "PLP", 1, 4, AddressingMode::Implicit),
+
+        Instruction::new(0x9A, "TXS", 1, 2, AddressingMode::Implicit),
+
+        Instruction::new(0xBA, "TSX", 1, 2, AddressingMode::Implicit),
+
     ];
 
     pub static ref INSTRUCTION_MAP: HashMap<u8, &'static Instruction> = {
