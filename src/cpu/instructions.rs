@@ -201,6 +201,9 @@ lazy_static! {
         Instruction::new(0x70, "BVC", 2, 2 /* 3 if branch taken, 4 if page crossed */, AddressingMode::Relative),
 
         // Jump
+        Instruction::new(0x4C, "JMP", 3, 3, AddressingMode::Absolute),
+        Instruction::new(0x6C, "JMP", 3, 5, AddressingMode::Indirect),
+
         Instruction::new(0x00, "BRK", 1, 7, AddressingMode::Implicit),
         // Instruction::new(0x00, "BRK", 2, 7, AddressingMode::Immediate),
     ];

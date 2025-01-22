@@ -164,6 +164,7 @@ impl Cpu {
                 0x70 => self.bvs(),
 
                 // Jump
+                0x4C | 0x6C => self.jmp(&instruction.addressing_mode),
                 0x00 => return,
                 _ => panic!("opcode '{:X}' not recognised", opcode),
             }
@@ -491,6 +492,14 @@ impl Cpu {
         }
     }
 
+    // Jump
+
+    fn jmp(&mut self, mode: &AddressingMode) {
+        let addr = self.get_address(mode);
+
+        self.pc = addr;
+    }
+
     // Other
 
     fn add_to_accumulator(&mut self, value: u8) {
@@ -618,7 +627,8 @@ impl Cpu {
             }
             AddressingMode::Indirect => {
                 // TODO: test
-                let addr = self.mem_read_u16(self.pc);
+                let deref_addr = self.mem_read_u16(self.pc);
+                let addr = self.mem_read_u16(deref_addr);
                 addr
             }
             AddressingMode::IndirectX => {
@@ -1037,6 +1047,26 @@ mod tests {
                 cpu.load_and_run(vec![0x90, (-3 as i8) as u8, 0xA9, 0x42]);
                 assert_eq!(cpu.pc, PROGRAM_START_ADDRESS as u16);
                 assert_ne!(cpu.a, 0x42);
+            }
+        }
+
+        mod jump {
+            use super::*;
+
+            #[test]
+            fn test_0x4c_jmp_absolute() {
+                let mut cpu = Cpu::new();
+                cpu.load_and_run(vec![0x4C, 0x10, 0x00]);
+                assert_eq!(cpu.pc, 0x11);
+            }
+
+            #[test]
+            fn test_0x6c_jmp_indirect() {
+                let mut cpu = Cpu::new();
+                cpu.load_and_run(vec![
+                    0xA9, 0x01, 0x85, 0xF0, 0xA9, 0xCC, 0x85, 0xF1, 0x6C, 0xF0, 0x00,
+                ]);
+                assert_eq!(cpu.pc, 0xCC02);
             }
         }
 
