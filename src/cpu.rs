@@ -189,6 +189,8 @@ impl Cpu {
                 0xF8 => self.sed(),
                 0xB8 => self.clv(),
 
+                0xEA => self.nop(),
+
                 _ => panic!("opcode '{:X}' not recognised", opcode),
             }
             if self.pc == pc_state {
@@ -607,6 +609,12 @@ impl Cpu {
     }
 
     // Other
+
+    fn nop(&mut self) {
+        // Do nothing
+    }
+
+    // Helper
 
     fn add_to_accumulator(&mut self, value: u8) {
         let (result, overflow) = {
