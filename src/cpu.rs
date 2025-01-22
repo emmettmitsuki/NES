@@ -93,6 +93,7 @@ impl Cpu {
             self.pc += 1;
 
             let instruction = INSTRUCTION_MAP.get(&opcode).unwrap();
+            let pc_state = self.pc;
 
             match opcode {
                 // Access
@@ -152,11 +153,16 @@ impl Cpu {
                 0xE0 | 0xE4 | 0xEC => self.cpx(&instruction.addressing_mode),
                 0xC0 | 0xC4 | 0xCC => self.cpy(&instruction.addressing_mode),
 
+                // Branch
+                0x90 => self.bcc(&instruction.addressing_mode),
+
                 // Jump
                 0x00 => return,
                 _ => panic!("opcode '{:X}' not recognised", opcode),
             }
-            self.pc += (instruction.bytes - 1) as u16;
+            if self.pc == pc_state {
+                self.pc += (instruction.bytes - 1) as u16;
+            }
         }
     }
 
@@ -436,6 +442,23 @@ impl Cpu {
         self.update_zero_and_negative_flags(result);
     }
 
+    // Branch
+
+    fn bcc(&mut self, mode: &AddressingMode) {
+        let addr = self.get_address(mode);
+        let value = self.mem_read(addr);
+
+        self.branch(self.get_carry_flag() == 0);
+    }
+
+    fn branch(&mut self, cond: bool) {
+        if cond {
+            let offset = self.mem_read(self.pc) as i8;
+            let addr = self.pc.wrapping_add(1).wrapping_add(offset as u16);
+            self.pc = addr;
+        }
+    }
+
     // Other
 
     fn add_to_accumulator(&mut self, value: u8) {
@@ -559,8 +582,7 @@ impl Cpu {
             }
             AddressingMode::Relative => {
                 // TODO: test
-                let offset = self.mem_read(self.pc) as u16;
-                self.pc + offset
+                self.pc
             }
             AddressingMode::Indirect => {
                 // TODO: test
@@ -962,6 +984,27 @@ mod tests {
                 cpu.load_and_run(vec![0xA0, 0x35, 0xC4, 0x10, 0x00]);
                 assert_eq!(cpu.get_negative_flag(), 1);
                 assert_eq!(cpu.get_carry_flag(), 0);
+            }
+        }
+
+        mod branch {
+            use super::*;
+
+            #[test]
+            fn test_0x90_bcc_positive_offset() {
+                let mut cpu = Cpu::new();
+                cpu.load_and_run(vec![0x90, 0x02, 0xA9, 0x13, 0x00]);
+                assert_eq!(cpu.pc, PROGRAM_START_ADDRESS as u16 + 5);
+                assert_ne!(cpu.a, 0x13);
+            }
+
+            #[test]
+            fn test_0x90_bcc_negative_offset() {
+                let mut cpu = Cpu::new();
+                cpu.mem_write(PROGRAM_START_ADDRESS as u16 - 1, 0x00);
+                cpu.load_and_run(vec![0x90, (-3 as i8) as u8, 0xA9, 0x42]);
+                assert_eq!(cpu.pc, PROGRAM_START_ADDRESS as u16);
+                assert_ne!(cpu.a, 0x42);
             }
         }
 
