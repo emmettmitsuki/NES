@@ -180,6 +180,15 @@ impl Cpu {
                 0x9A => self.txs(),
                 0xBA => self.tsx(),
 
+                // Flag
+                0x18 => self.clc(),
+                0x38 => self.sec(),
+                0x58 => self.cli(),
+                0x78 => self.sei(),
+                0xD8 => self.cld(),
+                0xF8 => self.sed(),
+                0xB8 => self.clv(),
+
                 _ => panic!("opcode '{:X}' not recognised", opcode),
             }
             if self.pc == pc_state {
@@ -561,6 +570,40 @@ impl Cpu {
 
     fn tsx(&mut self) {
         self.x = self.sp;
+    }
+
+    // Flag
+
+    fn clc(&mut self) {
+        self.status &= !StatusFlags::Carry;
+    }
+
+    fn sec(&mut self) {
+        self.status |= StatusFlags::Carry;
+    }
+
+    // TODO:
+    // NOTE: the effect of changing interrupt disable flag is delayed 1 instruction.
+    fn cli(&mut self) {
+        self.status &= !StatusFlags::InterruptDisable;
+    }
+
+    // TODO:
+    // NOTE: the effect of changing interrupt disable flag is delayed 1 instruction.
+    fn sei(&mut self) {
+        self.status |= StatusFlags::InterruptDisable;
+    }
+
+    fn cld(&mut self) {
+        self.status &= !StatusFlags::Decimal;
+    }
+
+    fn sed(&mut self) {
+        self.status |= StatusFlags::Decimal;
+    }
+
+    fn clv(&mut self) {
+        self.status &= !StatusFlags::Overflow;
     }
 
     // Other
